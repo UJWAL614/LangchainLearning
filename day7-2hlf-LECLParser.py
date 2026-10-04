@@ -49,8 +49,6 @@ def get_recipe(dish: str) -> Recipe:
     # result.name and result.ingredients directly, like a normal Python object
     return recipe_chain.invoke({"dish": dish})
  
-
-
 if __name__ == "__main__":
     topic = input("Topic: ").strip() or "black holes"
     fact = get_interesting_fact(topic)
