@@ -1,0 +1,283 @@
+uvicorn main:app --reload
+python -m pip install uvicorn
+python -m venv venv
+
+venv\Scripts\activate
+uvicorn main:app --reload
+pip install fastapi uvicorn
+pip freeze > requirements.txt
+
+---------------
+
+https://aistudio.google.com/api-keys
+https://console.groq.com/keys
+
+pip install python-dotenv
+pip show python-dotenv
+pip install requests
+pip show requests
+pip install langchain langchain-google-genai langchain-groq
+------------------------
+
+# LangChain + RAG: Day-by-Day Study Plan (8 Weeks)
+
+Assumes weekdays ~1–1.5 hrs, weekends ~2–3 hrs. Shift days around your schedule as needed — the order matters more than the exact dates.
+
+---
+
+## WEEK 1 — Setup + Python Refresh
+
+**Day 1 (1.5h) — Environment setup**
+- Install Python 3.11/3.12, VS Code + extensions (Python, Pylance, Jupyter), Git.
+- Create a project folder, run `python -m venv venv`, activate it, `pip install -U pip`.
+- Create a GitHub account (if you don't have one) and a new empty repo for this learning journey.
+
+**Day 2 (1.5h) — Get API keys**
+- Sign up for Google AI Studio (Gemini) — get a free API key.
+- Sign up for Groq — get a free API key.
+- Create a `.env` file, store both keys, install `python-dotenv`, write a 5-line script that loads them with `os.getenv` and prints (masked) confirmation they loaded.
+- Add `.env` to `.gitignore` immediately (before you commit anything).
+
+**Day 3 (1h) — Python: requests + JSON refresh**
+- Write a script using `requests` to call the Gemini REST API directly (no SDK, no LangChain) with a hardcoded prompt.
+- Parse the JSON response manually to extract just the text.
+
+**Day 4 (1h) — Python: environment variables + JSON structures**
+- Refactor yesterday's script: move the API key to `.env`, use `python-dotenv`.
+- Practice nested JSON parsing: write a function that takes a messy dict/list and extracts specific fields (simulate what an LLM response with multiple candidates looks like).
+
+**Day 5 (1h) — Python: OOP + type hints refresh**
+- Write a small `Chatbot` class with methods like `.ask(prompt: str) -> str` and an internal history list (`List[dict]`).
+- Add type hints throughout. This mirrors how LangChain objects are structured.
+
+**Saturday (2–3h) — Raw API chat loop**
+- Build a simple CLI loop: user types a message, it's sent to Gemini or Groq via `requests`, response printed, loop continues.
+- Manually maintain conversation history (append each turn to a list, send the whole list each time) — this is the exact problem LangChain's memory feature solves, so doing it manually first makes memory click later.
+
+**Sunday (2h) — Review + commit**
+- Clean up the week's scripts, add a short README, push to GitHub.
+- Read LangChain's "Introduction" page in the official docs — just read, don't code yet.
+
+---
+
+## WEEK 2 — LangChain Basics
+
+**Day 1 (1h) — Install LangChain, first call**
+- `pip install langchain langchain-google-genai langchain-groq`
+- Replace your raw `requests` call from Week 1 with LangChain's `ChatGoogleGenerativeAI` — same result, different plumbing. Note how much boilerplate disappeared.
+
+**Day 2 (1h) — Prompt templates**
+- Learn `PromptTemplate` and `ChatPromptTemplate`.
+- Rewrite yesterday's script so the prompt has variables (e.g., topic, tone) filled in via the template instead of an f-string.
+
+**Day 3 (1.5h) — LCEL basics**
+- Learn the `prompt | model` pipe syntax.
+- Build a 2-step chain: prompt → model. Print the raw output object, then `.invoke()` it to get just the text.
+
+**Day 4 (1.5h) — Output parsers**
+- Add a `StrOutputParser` to the end of the chain (`prompt | model | parser`).
+- Then try a structured output example: define a small Pydantic model (e.g., `Recipe` with `name`, `ingredients: List[str]`) and use a parser to force the LLM's output into that shape.
+
+**Day 5 (1h) — Consolidate + compare providers**
+- Swap the `ChatGoogleGenerativeAI` model for `ChatGroq` in the same chain — confirm how little code changes. This is the "provider abstraction" benefit in action.
+- Note differences you observe (speed, response style).
+
+**Saturday (2.5h) — Project #1: "Hello LangChain"**
+- Build a small script/notebook: takes a topic from the user, generates a structured explanation (title, summary, 3 bullet points) using a Pydantic output parser.
+- Push to GitHub as `project-01-hello-langchain`.
+
+**Sunday (2h) — Project #2: Structured extractor**
+- Take a messy block of text (e.g., a fake invoice or email) and extract structured fields (name, date, amount) into a Pydantic object using an output parser.
+- Push to GitHub as `project-02-structured-extraction`.
+
+---
+
+## WEEK 3 — Memory, Tools, Agents
+
+**Day 1 (1h) — Conversation memory concept**
+- Read how LangChain represents chat history (`HumanMessage`, `AIMessage`, `SystemMessage`).
+- Modify a chain to accept a list of prior messages instead of a single string prompt.
+
+**Day 2 (1h) — RunnableWithMessageHistory**
+- Learn the modern memory pattern (`RunnableWithMessageHistory`) instead of the older `ConversationBufferMemory` class.
+- Wire it into your chain so history persists across turns automatically.
+
+**Day 3 (1.5h) — Tools basics**
+- Learn the `@tool` decorator — turn a plain Python function (e.g., a function that adds two numbers, or fetches fake weather data) into a LangChain tool.
+- Bind that tool to a chat model and see the model "decide" to call it.
+
+**Day 4 (1.5h) — A real API as a tool**
+- Since you know REST APIs already: wrap a real free public API (e.g., a weather API or a currency conversion API) as a LangChain tool.
+- Ask the model a question that requires calling it, confirm it calls the tool and uses the result in its answer.
+
+**Day 5 (1h) — Agents intro**
+- Learn what an "agent" adds on top of tool-calling (a loop: think → act → observe → repeat).
+- Read (don't yet build) a simple LangChain agent example from the docs.
+
+**Saturday (2.5h) — Project #3: Chatbot with memory**
+- Build a CLI chatbot that remembers the whole conversation using `RunnableWithMessageHistory`.
+- Push to GitHub as `project-03-memory-chatbot`.
+
+**Sunday (2h) — Debug/review day**
+- Go back through Projects 1–3, add error handling (what happens if the API key is missing, or the API times out?).
+- Write a short `NOTES.md` in your repo capturing 3 things you learned this week — helps retention and gives you interview talking points later.
+
+---
+
+## WEEK 4 — RAG Fundamentals Part 1 (Loading, Chunking, Embeddings)
+
+**Day 1 (1h) — Why RAG**
+- Read a conceptual explainer on why RAG exists (LLMs are frozen at training time and don't know private data).
+- No coding — just make sure you can explain it in your own words.
+
+**Day 2 (1h) — Document loading**
+- Install `pypdf`, use `PyPDFLoader` to load a PDF (pick any free PDF — a paper, a manual, your own notes) into LangChain `Document` objects.
+- Print out `len(documents)` and inspect one document's `.page_content` and `.metadata`.
+
+**Day 3 (1.5h) — Chunking experiments**
+- Use `RecursiveCharacterTextSplitter` with a small chunk size (e.g., 300) and print the resulting chunks.
+- Re-run with chunk size 1000 and chunk overlap 100 — compare how differently the same document gets split. This intuition matters a lot later.
+
+**Day 4 (1.5h) — Embeddings concept + first vectors**
+- Read a short conceptual piece on what embeddings represent (semantic similarity as vector distance).
+- Install `sentence-transformers`, embed 3–4 sentences locally, and manually compute cosine similarity between them to see similar sentences score higher.
+
+**Day 5 (1h) — Embeddings via LangChain**
+- Swap your manual `sentence-transformers` code for LangChain's embedding wrapper.
+- Embed all the chunks from Day 3 and print the vector length (dimensionality) to confirm it worked.
+
+**Saturday (2.5h) — Vector DB basics with Chroma**
+- Install `chromadb`, create a local Chroma collection, store your embedded chunks in it.
+- Run a similarity search query and inspect what comes back.
+
+**Sunday (2h) — Project #4: Single-document RAG (part 1)**
+- Combine everything: load one PDF → chunk → embed → store in Chroma.
+- Stop here for today (retrieval + generation come next week) — commit progress as `project-04-single-doc-rag` (WIP).
+
+---
+
+## WEEK 5 — RAG Fundamentals Part 2 (Retrieval, Prompting, Generation, Evaluation)
+
+**Day 1 (1h) — Retrieval**
+- Turn your Chroma store into a retriever (`.as_retriever()`), query it with a real question about your PDF, and print the top-k retrieved chunks.
+
+**Day 2 (1.5h) — Prompt construction for RAG**
+- Write a prompt template that takes `{context}` (the retrieved chunks) and `{question}` and instructs the model to answer *only* using the given context, and say "I don't know" if the answer isn't there.
+
+**Day 3 (1.5h) — Full RAG chain with LCEL**
+- Wire retriever → prompt → model → parser into one LCEL chain.
+- Ask several questions about your PDF and check answer quality.
+
+**Day 4 (1h) — Finish Project #4**
+- Polish the single-document RAG project from last weekend into a clean script/notebook with a simple loop for asking multiple questions.
+- Push to GitHub as `project-04-single-doc-rag` (complete).
+
+**Day 5 (1h) — Manual evaluation**
+- Write down 5 questions with known correct answers about your PDF.
+- Run them through your RAG system, mark each as correct/partially correct/wrong, and for wrong ones inspect what was actually retrieved — this is the debugging skill that matters most in RAG work.
+
+**Saturday (2.5h) — Project #5: Multi-document RAG**
+- Load a folder of multiple PDFs/text files (e.g., a few of your own notes or public docs on one topic).
+- Chunk, embed, and store all of them in one Chroma collection, then query across all documents.
+- Push to GitHub as `project-05-multi-doc-rag`.
+
+**Sunday (1.5h) — Chunking/retrieval tuning**
+- Go back to Project #5 and experiment: change chunk size, change top-k, see how answers change.
+- Note observations in `NOTES.md`.
+
+---
+
+## WEEK 6 — Combining Skills (Web RAG, Agents + RAG, Project Planning)
+
+**Day 1 (1h) — Web-based document loading**
+- Use `WebBaseLoader` to load a blog post or documentation page instead of a local file.
+- Run it through the same chunk → embed → store → retrieve pipeline.
+
+**Day 2 (1h) — Project #6: Web RAG**
+- Build a small script: given a URL, answer questions about that page's content.
+- Push to GitHub as `project-06-web-rag`.
+
+**Day 3 (1.5h) — Agent that chooses between RAG and a tool**
+- Combine a RAG retriever (as a tool) with a second tool (e.g., a weather/currency API tool from Week 3).
+- Give the agent both tools and ask it questions that should route to each — verify it picks correctly.
+
+**Day 4 (1.5h) — Project #7: RAG + Agent**
+- Finish and polish yesterday's agent into a small standalone project.
+- Push to GitHub as `project-07-rag-plus-agent`.
+
+**Day 5 (1h) — Design the final project**
+- Sketch (on paper or in a `DESIGN.md`) the schema for your final project's SQLite database (e.g., employees, products, orders) and decide what unstructured documents you'll use for the RAG side (e.g., a fake company policy doc, FAQ, product manual).
+
+**Saturday (2.5h) — Build the SQLite database**
+- Create the SQLite database and tables, insert sample data (you know SQL — this should be quick).
+- Write a couple of raw SQL queries to confirm the data is sane.
+
+**Sunday (2h) — Write the RAG documents**
+- Write or gather 2–4 short documents for the RAG side of the final project (policies, FAQs, product info).
+- Run them through your chunk → embed → store pipeline into a dedicated Chroma collection for this project.
+
+---
+
+## WEEK 7 — Final Project Build
+
+**Day 1 (1.5h) — LangChain SQL tool**
+- Learn LangChain's SQL toolkit/`SQLDatabase` wrapper.
+- Connect it to your SQLite file, ask a natural-language question, confirm it generates and runs correct SQL.
+
+**Day 2 (1.5h) — RAG as a tool (again, project-specific)**
+- Wrap your project's RAG retriever (from last Sunday) as a tool, same pattern as Week 6.
+
+**Day 3 (1.5h) — Combine into one agent**
+- Give one agent both the SQL tool and the RAG tool.
+- Test with a mix of questions ("How many orders last month?" vs. "What's our refund policy?") and confirm correct routing.
+
+**Day 4 (1.5h) — Wrap in FastAPI**
+- Install FastAPI + uvicorn.
+- Create a single `/ask` POST endpoint that takes a question, runs it through the agent, returns the answer as JSON.
+
+**Day 5 (1h) — Manual end-to-end testing**
+- Test the `/ask` endpoint with Postman/Thunder Client using 8–10 varied questions.
+- Log/print what tool was used for each, to confirm routing logic.
+
+**Saturday (2.5h) — Error handling + edge cases**
+- Add handling for: empty questions, API/database errors, rate-limit errors from the LLM provider (retry with backoff or a fallback provider).
+
+**Sunday (2h) — Buffer/catch-up day**
+- Use this day to fix anything from the week that didn't work, or to go deeper on a concept that felt shaky.
+
+---
+
+## WEEK 8 — Polish + Publish
+
+**Day 1 (1h) — README**
+- Write a clear README: what the project does, architecture overview, setup instructions, example request/response.
+
+**Day 2 (1h) — .env.example + security check**
+- Double check no real API keys are committed anywhere in git history.
+- Add a `.env.example` with placeholder values.
+
+**Day 3 (1h) — Architecture diagram**
+- Draw a simple diagram (even hand-drawn, photographed, or made in draw.io/Excalidraw — both free) showing: user → API → agent → [SQL tool / RAG tool] → LLM → response.
+
+**Day 4 (1h) — Design decisions write-up**
+- Add a short section to the README explaining key choices (why Chroma over FAISS, chosen chunk size, why this agent routing approach) — shows engineering judgment.
+
+**Day 5 (1h) — Demo recording**
+- Record a short screen capture (free tools: ScreenToGif, OBS Studio) showing 2–3 example questions and answers.
+
+**Saturday (2h) — Deploy (optional but recommended)**
+- Deploy the FastAPI app on a free tier (Render or Railway both have free options) so others can try it live without cloning the repo.
+
+**Sunday (1.5h) — Final publish**
+- Final proofread of README, push everything to GitHub, add the project link and a short description to your resume/LinkedIn.
+
+---
+
+## Quick Reference: Total Time Investment
+
+- Weekdays: ~1–1.5 hrs × 5 = ~6–7.5 hrs/week
+- Weekends: ~2–3 hrs × 2 = ~4–6 hrs/week
+- **Total per week: ~10–13.5 hrs**
+- **Total over 8 weeks: ~80–108 hrs**
+
+If you have more time available, you can compress this into 5–6 weeks by combining some of the lighter weekday tasks. If your schedule is tighter, stretching it to 10–12 weeks is fine — the order of topics matters far more than the calendar pace.
